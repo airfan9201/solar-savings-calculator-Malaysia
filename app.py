@@ -55,18 +55,47 @@ CITY_COORDINATES = {
 
 
 def get_location_name_from_coords(lat, lon):
-    """Mendapatkan nama bandar & negeri daripada koordinat GPS menggunakan Open-Meteo API."""
+    """Mendapatkan nama bandar berdasarkan koordinat GPS menggunakan OpenStreetMap."""
+
     try:
-        url = f"https://geocoding-api.open-meteo.com/v1/get?latitude={lat}&longitude={lon}"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+
+        url = (
+            f"https://nominatim.openstreetmap.org/reverse"
+            f"?lat={lat}&lon={lon}&format=jsonv2"
+        )
+
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "SolarSavingsCalculator/1.0"
+            }
+        )
+
         with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode('utf-8'))
-            city_name = data.get('name', '')
-            admin1 = data.get('admin1', '') # Negeri
-            if city_name:
-                return f"{city_name}, {admin1} (Lokasi GPS Semasa)" if admin1 else f"{city_name} (Lokasi GPS Semasa)"
+            data = json.loads(response.read().decode("utf-8"))
+
+        address = data.get("address", {})
+
+        city = (
+            address.get("city")
+            or address.get("town")
+            or address.get("municipality")
+            or address.get("village")
+            or address.get("county")
+        )
+
+        state = address.get("state")
+
+        if city and state:
+            return f"{city}, {state} (Lokasi GPS Semasa)"
+
+        elif city:
+            return f"{city} (Lokasi GPS Semasa)"
+
     except Exception as e:
+
         print("Reverse Geocode Error:", e)
+
     return f"Lokasi GPS ({lat:.2f}°, {lon:.2f}°)"
 
 
