@@ -65,8 +65,8 @@ def get_location_name_from_coords(lat, lon):
             admin1 = data.get('admin1', '') # Negeri
             if city_name:
                 return f"{city_name}, {admin1} (Lokasi GPS Semasa)" if admin1 else f"{city_name} (Lokasi GPS Semasa)"
-    except Exception:
-        pass
+    except Exception as e:
+        print("Reverse Geocode Error:", e)
     return f"Lokasi GPS ({lat:.2f}°, {lon:.2f}°)"
 
 
