@@ -1,0 +1,19 @@
+{
+  "name": "solar-savings-calculator-malaysia",
+  "version": "1.0.0",
+  "description": "Solar Savings Calculator for Malaysian Domestic Users",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "solar",
+    "calculator",
+    "malaysia"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/analytics": "^1.6.1"
+  }
+}
