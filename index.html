@@ -95,7 +95,7 @@
                 <!-- Weather & Location Info -->
                 <div class="bg-slate-800 text-slate-200 p-3 rounded-lg text-xs space-y-1">
                     <p>📍 <b><span id="res-lbl-loc">Lokasi:</span></b> <span id="res-loc">-</span></p>
-                    <p>☀️ <b><span id="res-lbl-psh">Purata Cuaca (PSH):</span></b> <span id="res-psh">-</span> jam/hari</p>
+                    <p>☀️ <b><span id="res-lbl-psh">Purata Cuaca (PSH):</span></b> <span id="res-psh">-</span> <span id="res-lbl-jh">jam/hari</span></p>
                 </div>
 
                 <!-- Solar Spec Card -->
@@ -191,6 +191,7 @@
                 btnCalc: "Kira & Simulasikan Penjimatan",
                 resLoc: "Lokasi:",
                 resPsh: "Purata Cuaca (PSH):",
+				resJh:"jam/hari",
                 sysTitle: "⚡ Cadangan Sistem Solar & Imbalan kWh",
                 lblSize: "Saiz Ideal:",
                 lblOrigKwh: "Penggunaan Asal:",
@@ -220,6 +221,7 @@
                 btnCalc: "Calculate & Simulate Savings",
                 resLoc: "Location:",
                 resPsh: "Average Sun Hours (PSH):",
+				resJh:"hour/day",
                 sysTitle: "⚡ Recommended Solar System & kWh Offset",
                 lblSize: "Ideal Size:",
                 lblOrigKwh: "Original Usage:",
@@ -275,6 +277,8 @@
             
             document.getElementById('res-lbl-loc').innerText = t.resLoc;
             document.getElementById('res-lbl-psh').innerText = t.resPsh;
+			document.getElementById('res-lbl-jh').innerText=t.resJh;
+			
             document.getElementById('res-sys-title').innerText = t.sysTitle;
             document.getElementById('res-lbl-size').innerText = t.lblSize;
             document.getElementById('res-lbl-orig-kwh').innerText = t.lblOrigKwh;
