@@ -155,7 +155,7 @@ def calculate():
         else:
             # Fallback ke Kuala Lumpur jika tiada GPS/pilihan bandar
             lat, lon = 3.1390, 101.6869
-            display_city_name = "Kuala Lumpur (Lalai)"
+            display_city_name = "Kuala Lumpur (Default)"
 
         avg_psh = fetch_weather_psh(lat, lon)
 
