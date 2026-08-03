@@ -35,6 +35,7 @@ CITY_COORDINATES = {
     'Kota Bharu, Kelantan': (6.1256, 102.2381),
     'Kota Kinabalu, Sabah': (5.9804, 116.0735),
     'Kuala Terengganu, Terengganu': (5.3302, 103.1408),
+    'Kuala Berang, Terengganu': (4.9688,103.0118),
     'Kuala Lumpur': (3.1390, 101.6869),
     'Kuantan, Pahang': (3.8077, 103.3260),
     'Kuching, Sarawak': (1.5533, 110.3592),
