@@ -337,6 +337,38 @@
             }
 
             const cityOption = document.getElementById('city-select').value;
+			
+			// Jika AUTO dipilih tetapi GPS masih belum diperoleh,
+			// cuba minta GPS sekali lagi sebelum membuat pengiraan.
+			if (cityOption === "AUTO" && (userLatitude === null || userLongitude === null)) {
+
+				try {
+
+					const position = await new Promise((resolve, reject) => {
+
+						navigator.geolocation.getCurrentPosition(
+							resolve,
+							reject,
+							{
+								enableHighAccuracy: true,
+								timeout: 5000,
+								maximumAge: 60000
+							}
+						);
+
+					});
+
+					userLatitude = position.coords.latitude;
+					userLongitude = position.coords.longitude;
+
+				} catch (err) {
+
+					console.log("GPS tidak tersedia. Menggunakan fallback.");
+
+				}
+
+			}
+			
 
             const customRates = {
                 eRate: parseFloat(document.getElementById('e-rate').value) || 0.2703,
