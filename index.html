@@ -399,6 +399,36 @@
             }
         }
 
+		
+		function getGPSLocation() {
+			if (navigator.geolocation) {
+				// Minta keizinan GPS peranti pengguna
+				navigator.geolocation.getCurrentPosition(
+					(position) => {
+						const lat = position.coords.latitude;
+						const lon = position.coords.longitude;
+
+						// Simpan koordinat GPS tempatan sebenar
+						userLatitude = lat;
+						userLongitude = lon;
+
+						alert(`Lokasi GPS berjaya dikesan! (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+						
+						// Setkan lokasi pada borang/pilihan
+						document.getElementById('locationStatus').innerText = 
+							`📍 Lokasi GPS Semasa: (${lat.toFixed(4)}°, ${lon.toFixed(4)}°)`;
+					},
+					(error) => {
+						alert("Gagal mendapatkan lokasi GPS. Sila pilih bandar secara manual.");
+					},
+					{ enableHighAccuracy: true } // Memaksa peranti guna GPS tepat
+				);
+			} else {
+				alert("Pelayar anda tidak menyokong fungsi Geolocation GPS.");
+			}
+		}
+
+
         // Muat senarai bandar apabila halaman dibuka
         loadCities();
     </script>
