@@ -113,10 +113,27 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
     service_tax = 0.0
 
     if kwh > 600:
+
         retail_fee = RETAIL_CHARGE_FEE
+
         afa_charge = kwh * afa_rate
-        subtotal = gross_bill + retail_fee + afa_charge
-        service_tax = subtotal * SERVICE_TAX_RATE
+
+        taxable_kwh = kwh - 600
+
+        taxable_energy = taxable_kwh * e_rate
+        taxable_network = taxable_kwh * n_rate
+        taxable_capacity = taxable_kwh * c_rate
+        taxable_afa = taxable_kwh * afa_rate
+
+        taxable_subtotal = (
+            taxable_energy
+            + taxable_network
+            + taxable_capacity
+            + taxable_afa
+            + retail_fee
+        )
+
+        service_tax = taxable_subtotal * SERVICE_TAX_RATE
     else:
         rebate = kwh * rebate_rate
 
