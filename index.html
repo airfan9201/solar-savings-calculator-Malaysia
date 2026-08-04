@@ -125,6 +125,7 @@
                                 <p id="row-orig-retail" class="hidden">• Caj Peruncitan: <span id="res-orig-retail">+RM 0.00</span></p>
                                 <p id="row-orig-afa" class="hidden">• Caj AFA: <span id="res-orig-afa">+RM 0.00</span></p>
                                 <p id="row-orig-st" class="hidden">• Service Tax (8%): <span id="res-orig-st">+RM 0.00</span></p>
+								<p id="row-orig-kwtbb" class="hidden">• KWTBB (1.6%): <span id="res-orig-kwtbb">+RM 0.00</span></p>
                             </div>
                         </div>
 
@@ -136,7 +137,8 @@
                                 <p id="row-new-rebate" class="hidden text-emerald-400">• Rebat Cekap: <span id="res-new-rebate">-RM 0.00</span></p>
                                 <p id="row-new-retail" class="hidden">• Caj Peruncitan: <span id="res-new-retail">+RM 0.00</span></p>
                                 <p id="row-new-afa" class="hidden">• Caj AFA: <span id="res-new-afa">+RM 0.00</span></p>
-                                <p id="row-new-st" class="hidden">• Service Tax (8%): <span id="res-new-st">+RM 0.00</span></p>
+                                <p id="row-new-st" class="hidden">• Service Tax (8% > 600kWh): <span id="res-new-st">+RM 0.00</span></p>
+								<p id="row-new-kwtbb" class="hidden">• KWTBB (1.6% > 300kWh): <span id="res-new-kwtbb">+RM 0.00</span></p>
                             </div>
                         </div>
                     </div>
@@ -421,6 +423,7 @@
                 toggleRow('row-orig-retail', 'res-orig-retail', data.origRetail, '+RM ');
                 toggleRow('row-orig-afa', 'res-orig-afa', data.origAfa, '+RM ');
                 toggleRow('row-orig-st', 'res-orig-st', data.origSt, '+RM ');
+				toggleRow('row-orig-kwtbb', 'res-orig-kwtbb', data.origKwtbb, '+RM ');
 
                 // Paparkan Bil Baharu Breakdown
                 document.getElementById('res-new-price').innerText = `RM ${data.newNet.toFixed(2)}`;
@@ -428,6 +431,7 @@
                 toggleRow('row-new-retail', 'res-new-retail', data.newRetail, '+RM ');
                 toggleRow('row-new-afa', 'res-new-afa', data.newAfa, '+RM ');
                 toggleRow('row-new-st', 'res-new-st', data.newSt, '+RM ');
+				toggleRow('row-new-kwtbb', 'res-new-kwtbb', data.newKwtbb, '+RM ');
 
                 // ROI & Penjimatan
                 document.getElementById('res-savings').innerText = `RM ${data.savingsRm.toFixed(2)}`;

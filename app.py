@@ -16,6 +16,7 @@ DEFAULT_EFFICIENT_REBATE = 0.2100 # RM / kWh (Default Rebat Cekap Tenaga jika <=
 
 RETAIL_CHARGE_FEE = 10.0   # RM (Caj jika > 600 kWh)
 SERVICE_TAX_RATE = 0.08    # 8% Cukai Perkhidmatan (Service Tax jika > 600 kWh)
+KWTBB_RATE = 0.016      # 1.6%
 
 # Koordinat Bandar-Bandar Utama di Seluruh Malaysia
 CITY_COORDINATES = {
@@ -111,6 +112,7 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
     afa_charge = 0.0
     rebate = 0.0
     service_tax = 0.0
+    kwtbb = 0.0
 
     if kwh > 600:
 
@@ -137,10 +139,25 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
     else:
         rebate = kwh * rebate_rate
 
-    net_bill = max(0.0, gross_bill - rebate + retail_fee + afa_charge + service_tax)
+    # ==========================
+    # KWTBB
+    # ==========================
+
+    kwtbb_base = (
+        gross_bill
+        + retail_fee
+        + afa_charge
+        - rebate
+    )
+
+    if kwh > 300:
+        kwtbb = kwtbb_base * KWTBB_RATE
+
+
+    net_bill = max(0.0, gross_bill - rebate + retail_fee + afa_charge + service_tax + kwtbb)
 
     return (
-        net_bill, gross_bill, rebate, retail_fee, afa_charge, service_tax,
+        net_bill, gross_bill, rebate, retail_fee, afa_charge, service_tax,kwtbb,
         energy_charge, network_charge, capacity_charge
     )
 
@@ -225,11 +242,11 @@ def calculate():
 
         # Pengiraan Bil Asal & Bil Baharu
         (
-            orig_net, orig_gross, orig_rebate, orig_retail, orig_afa, orig_st, orig_e, orig_n, orig_c
+            orig_net, orig_gross, orig_rebate, orig_retail, orig_afa, orig_st, orig_kwtbb, orig_e, orig_n, orig_c
         ) = calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate)
 
         (
-            new_net, new_gross, new_rebate, new_retail, new_afa, new_st, new_e, new_n, new_c
+            new_net, new_gross, new_rebate, new_retail, new_afa, new_st, new_kwtbb, new_e, new_n, new_c
         ) = calculate_tnb_bill(new_grid_kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate)
 
         savings_rm = orig_net - new_net
@@ -257,6 +274,7 @@ def calculate():
             'origRetail': round(orig_retail, 2),
             'origAfa': round(orig_afa, 2),
             'origSt': round(orig_st, 2),
+            'origKwtbb': round(orig_kwtbb,2),
             'origNet': round(orig_net, 2),
             # Detail Bil Baharu
             'newNet': round(new_net, 2),
@@ -264,6 +282,7 @@ def calculate():
             'newRetail': round(new_retail, 2),
             'newAfa': round(new_afa, 2),
             'newSt': round(new_st, 2),
+            'newKwtbb': round(new_kwtbb,2),
             # ROI & Penjimatan
             'savingsRm': round(savings_rm, 2),
             'savingsPct': round(savings_pct, 1),
