@@ -24,7 +24,7 @@
                 <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
                     ☀️ <span id="txt-title">Simulator Penjimatan Solar</span>
                 </h1>
-                <p class="text-sky-400 text-xs md:text-sm mt-1" id="txt-subtitle">Khas untuk Pengguna Domestik (Single-Phase)</p>
+                <p class="text-sky-400 text-xs md:text-sm mt-1" id="txt-subtitle">Khas untuk Pengguna Domestik AM Sahaja(Single-Phase)</p>
             </div>
             
             <!-- Language Switcher -->
@@ -51,7 +51,7 @@
                 <!-- Input 2: kWh -->
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" id="lbl-kwh">Penggunaan Elektrik Sebulan (kWh)</label>
-                    <input type="number" id="kwh-input" value="650" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" placeholder="e.g. 650">
+                    <input type="number" id="kwh-input" value="650" oninput="updateEnergyRate()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" placeholder="e.g. 650">
                 </div>
 
                 <!-- Custom Rates Settings -->
@@ -181,7 +181,7 @@
         const i18n = {
             ms: {
                 title: "Simulator Penjimatan Solar",
-                subtitle: "Khas untuk Pengguna Domestik (Single-Phase)",
+                subtitle: "Khas untuk Pengguna Domestik AM Sahaja(Single-Phase)",
                 lblCity: "Pilih Lokasi / Bandar (Data Cuaca API):",
                 lblKwh: "Penggunaan Elektrik Sebulan (kWh)",
                 lblAdvanced: "Tetapan Kadar Tarif & Rebat (Pilihan)",
@@ -211,7 +211,7 @@
             },
             en: {
                 title: "Solar Savings Simulator",
-                subtitle: "Exclusively for Domestic Users (Single-Phase)",
+                subtitle: "Exclusively for General Domestic Users Only(Single-Phase)",
                 lblCity: "Select Location / City (API Weather Data):",
                 lblKwh: "Monthly Electricity Usage (kWh)",
                 lblAdvanced: "Tariff & Rebate Settings (Optional)",
@@ -465,6 +465,20 @@
                 row.classList.add('hidden');
             }
         }
+		
+		function updateEnergyRate() {
+
+			const kwh = parseFloat(document.getElementById("kwh-input").value) || 0;
+			const eRate = document.getElementById("e-rate");
+
+			if (kwh > 1500) {
+				eRate.value = "0.3703";
+			} else {
+				eRate.value = "0.2703";
+			}
+
+		}
+
 
         // Jalankan fungsi pengesanan GPS & muat bandar bila halaman dibuka
         window.addEventListener('DOMContentLoaded', () => {
