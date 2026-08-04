@@ -137,6 +137,7 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
 
         service_tax = taxable_subtotal * SERVICE_TAX_RATE
     else:
+        rebate_rate = get_efficient_rebate_rate(kwh)
         rebate = kwh * rebate_rate
 
     # ==========================
@@ -294,6 +295,43 @@ def calculate():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+def get_efficient_rebate_rate(kwh):
+
+    if kwh <= 200:
+        return 0.250
+    elif kwh <= 250:
+        return 0.245
+    elif kwh <= 300:
+        return 0.225
+    elif kwh <= 350:
+        return 0.210
+    elif kwh <= 400:
+        return 0.170
+    elif kwh <= 450:
+        return 0.145
+    elif kwh <= 500:
+        return 0.120
+    elif kwh <= 550:
+        return 0.105
+    elif kwh <= 600:
+        return 0.090
+    elif kwh <= 650:
+        return 0.075
+    elif kwh <= 700:
+        return 0.055
+    elif kwh <= 750:
+        return 0.045
+    elif kwh <= 800:
+        return 0.040
+    elif kwh <= 850:
+        return 0.025
+    elif kwh <= 900:
+        return 0.010
+    elif kwh <= 1000:
+        return 0.005
+
+    return 0.0
 
 
 if __name__ == '__main__':
