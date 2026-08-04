@@ -145,10 +145,7 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
     # ==========================
 
     kwtbb_base = (
-        gross_bill
-        + retail_fee
-        + afa_charge
-        - rebate
+        gross_bill - rebate
     )
 
     if kwh > 300:
