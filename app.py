@@ -101,7 +101,9 @@ def get_location_name_from_coords(lat, lon):
 
 
 def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
-    """Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat, caj peruncitan, dan Service Tax (8%)."""
+    """Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat,
+    caj peruncitan, Service Tax dan KWTBB."""
+
     energy_charge = kwh * e_rate
     network_charge = kwh * n_rate
     capacity_charge = kwh * c_rate
@@ -114,12 +116,26 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
     service_tax = 0.0
     kwtbb = 0.0
 
+    # ==========================
+    # REBAT CEKAP TENAGA
+    # ==========================
+
+    rebate_rate = get_efficient_rebate_rate(kwh)
+    rebate = kwh * rebate_rate
+
+    # ==========================
+    # AFA + SERVICE TAX
+    # ==========================
+
     if kwh > 600:
 
         retail_fee = RETAIL_CHARGE_FEE
 
+        # AFA dikenakan atas keseluruhan penggunaan
         afa_charge = kwh * afa_rate
 
+        # Hanya penggunaan melebihi 600 kWh
+        # digunakan untuk pengiraan Service Tax
         taxable_kwh = kwh - 600
 
         taxable_energy = taxable_kwh * e_rate
@@ -136,27 +152,41 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
         )
 
         service_tax = taxable_subtotal * SERVICE_TAX_RATE
-    else:
-        rebate_rate = get_efficient_rebate_rate(kwh)
-        rebate = kwh * rebate_rate
 
     # ==========================
     # KWTBB
     # ==========================
 
-    kwtbb_base = (
-        gross_bill - rebate
-    )
+    kwtbb_base = gross_bill - rebate
 
     if kwh > 300:
         kwtbb = kwtbb_base * KWTBB_RATE
 
+    # ==========================
+    # NET BILL
+    # ==========================
 
-    net_bill = max(0.0, gross_bill - rebate + retail_fee + afa_charge + service_tax + kwtbb)
+    net_bill = max(
+        0.0,
+        gross_bill
+        - rebate
+        + retail_fee
+        + afa_charge
+        + service_tax
+        + kwtbb
+    )
 
     return (
-        net_bill, gross_bill, rebate, retail_fee, afa_charge, service_tax,kwtbb,
-        energy_charge, network_charge, capacity_charge
+        net_bill,
+        gross_bill,
+        rebate,
+        retail_fee,
+        afa_charge,
+        service_tax,
+        kwtbb,
+        energy_charge,
+        network_charge,
+        capacity_charge
     )
 
 
