@@ -103,13 +103,7 @@ def get_location_name_from_coords(lat, lon):
 
 
 #calculate spawning month
-def calculate_spanning_month_afa(
-    kwh,
-    billing_start,
-    billing_end,
-    afa_rate_1,
-    afa_rate_2
-):
+def calculate_spanning_month_afa(kwh,billing_start,billing_end,afa_rate_1, afa_rate_2):
     """
     Mengira AFA untuk billing period yang mungkin merentasi dua bulan.
 
