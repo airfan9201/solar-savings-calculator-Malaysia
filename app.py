@@ -103,61 +103,41 @@ def get_location_name_from_coords(lat, lon):
 
 
 #calculate spawning month
-def calculate_spanning_month_afa(kwh,billing_start,billing_end,afa_rate_1, afa_rate_2):
+def calculate_spanning_month_afa(kwh,billing_start,billing_end,afa_rate_1,afa_rate_2):
     """
-    Mengira AFA untuk billing period yang mungkin merentasi dua bulan.
-
-    Penggunaan bulanan dianggarkan secara prorata berdasarkan bilangan hari.
+    Mengira AFA untuk billing period yang merentasi dua bulan secara prorata mengikut bilangan hari.
     """
-
-    # Jika tarikh tidak diberikan, gunakan kadar pertama
+    # Jika tarikh tidak diberikan, gunakan kadar pertama (afa_rate_1)
     if not billing_start or not billing_end:
         return kwh * afa_rate_1
 
-    start_date = datetime.strptime(billing_start, "%Y-%m-%d").date()
-    end_date = datetime.strptime(billing_end, "%Y-%m-%d").date()
-
-    if end_date <= start_date:
-        raise ValueError("Tarikh akhir bil mesti selepas tarikh mula bil.")
-
-    # Billing period dalam bulan yang sama
-    if (
-        start_date.year == end_date.year
-        and start_date.month == end_date.month
-    ):
+    try:
+        start_date = datetime.strptime(billing_start, "%Y-%m-%d").date()
+        end_date = datetime.strptime(billing_end, "%Y-%m-%d").date()
+    except ValueError:
         return kwh * afa_rate_1
 
-    # Buat masa ini kita sokong spanning maksimum 2 bulan
-    if (
-        end_date.year != start_date.year
-        and end_date.month != start_date.month
-    ):
-        raise ValueError(
-            "Billing period lebih daripada dua bulan belum disokong."
-        )
+    if end_date <= start_date:
+        return kwh * afa_rate_1
 
+    # Jika dalam bulan dan tahun yang sama
+    if start_date.year == end_date.year and start_date.month == end_date.month:
+        return kwh * afa_rate_1
+
+    # Pengiraan bilangan hari
     total_days = (end_date - start_date).days
 
-    # Hari dalam bulan pertama
-    first_month_end = (
-        start_date.replace(day=28)
-        + timedelta(days=4)
-    )
-    first_month_end = first_month_end.replace(day=1) - timedelta(days=1)
-
-    first_month_days = (
-        first_month_end - start_date
-    ).days + 1
-
+    # Cari hari terakhir untuk bulan pertama
+    first_month_end = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    first_month_days = (first_month_end - start_date).days + 1
     second_month_days = total_days - first_month_days
 
-    first_month_kwh = (
-        kwh * first_month_days / total_days
-    )
+    if total_days <= 0 or first_month_days <= 0 or second_month_days <= 0:
+        return kwh * afa_rate_1
 
-    second_month_kwh = (
-        kwh * second_month_days / total_days
-    )
+    # Agihan kWh mengikut nisbah hari
+    first_month_kwh = kwh * (first_month_days / total_days)
+    second_month_kwh = kwh * (second_month_days / total_days)
 
     afa_first = first_month_kwh * afa_rate_1
     afa_second = second_month_kwh * afa_rate_2
