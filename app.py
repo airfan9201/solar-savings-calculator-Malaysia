@@ -55,7 +55,11 @@ CITY_COORDINATES = {
     'Tawau, Sabah': (4.2447, 117.8912),
 }
 
-
+def round_half_up(n, decimals=2):
+    """Fungsi pembundaran standard kewangan/TNB (bukan banker's rounding Python)."""
+    multiplier = 10 ** decimals
+    return math.floor(n * multiplier + 0.5) / multiplier
+    
 def get_location_name_from_coords(lat, lon):
     """Mendapatkan nama bandar berdasarkan koordinat GPS menggunakan OpenStreetMap."""
 
@@ -103,184 +107,117 @@ def get_location_name_from_coords(lat, lon):
 
 
 #calculate spawning month
-def calculate_spanning_month_afa(kwh,billing_start,billing_end,afa_rate_1,afa_rate_2):
-    """
-    Mengira AFA untuk billing period yang merentasi dua bulan secara prorata mengikut bilangan hari.
-    """
-    # Jika tarikh tidak diberikan, gunakan kadar pertama (afa_rate_1)
+def calculate_spanning_month_afa(kwh, billing_start, billing_end, afa_rate_1, afa_rate_2):
     if not billing_start or not billing_end:
-        return kwh * afa_rate_1
+        return round_half_up(kwh * afa_rate_1)
 
     try:
         start_date = datetime.strptime(billing_start, "%Y-%m-%d").date()
         end_date = datetime.strptime(billing_end, "%Y-%m-%d").date()
     except ValueError:
-        return kwh * afa_rate_1
+        return round_half_up(kwh * afa_rate_1)
 
-    if end_date <= start_date:
-        return kwh * afa_rate_1
+    if end_date <= start_date or (start_date.year == end_date.year and start_date.month == end_date.month):
+        return round_half_up(kwh * afa_rate_1)
 
-    # Jika dalam bulan dan tahun yang sama
-    if start_date.year == end_date.year and start_date.month == end_date.month:
-        return kwh * afa_rate_1
-
-    # Pengiraan bilangan hari
     total_days = (end_date - start_date).days
-
-    # Cari hari terakhir untuk bulan pertama
     first_month_end = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
     first_month_days = (first_month_end - start_date).days + 1
     second_month_days = total_days - first_month_days
 
-    if total_days <= 0 or first_month_days <= 0 or second_month_days <= 0:
-        return kwh * afa_rate_1
+    if total_days <= 0:
+        return round_half_up(kwh * afa_rate_1)
 
-    # Agihan kWh mengikut nisbah hari
-    first_month_kwh = kwh * (first_month_days / total_days)
-    second_month_kwh = kwh * (second_month_days / total_days)
+    # Agihan kWh
+    kwh_1 = kwh * (first_month_days / total_days)
+    kwh_2 = kwh * (second_month_days / total_days)
 
-    afa_first = first_month_kwh * afa_rate_1
-    afa_second = second_month_kwh * afa_rate_2
+    # Pecahkan mengikut format TNB (Base 600 + Taxable >600)
+    base_kwh_1 = min(kwh_1, 600.0 * (first_month_days / total_days))
+    taxable_kwh_1 = max(0.0, kwh_1 - base_kwh_1)
 
-    return afa_first + afa_second
+    base_kwh_2 = min(kwh_2, 600.0 * (second_month_days / total_days))
+    taxable_kwh_2 = max(0.0, kwh_2 - base_kwh_2)
 
-def calculate_taxable_afa(kwh,billing_start,billing_end,afa_rate_1,afa_rate_2):
-    """
-    Mengira bahagian AFA yang berkaitan dengan penggunaan
-    melebihi 600 kWh untuk tujuan Service Tax.
-    """
+    afa_1 = round_half_up(base_kwh_1 * afa_rate_1) + round_half_up(taxable_kwh_1 * afa_rate_1)
+    afa_2 = round_half_up(base_kwh_2 * afa_rate_2) + round_half_up(taxable_kwh_2 * afa_rate_2)
 
+    return afa_1 + afa_2
+
+def calculate_taxable_afa(kwh, billing_start, billing_end, afa_rate_1, afa_rate_2):
     if kwh <= 600:
         return 0.0
 
     taxable_kwh = kwh - 600
 
-    # Jika tiada spanning month,
-    # semua taxable kWh menggunakan rate pertama.
     if not billing_start or not billing_end:
-        return taxable_kwh * afa_rate_1
+        return round_half_up(taxable_kwh * afa_rate_1)
 
-    start_date = datetime.strptime(
-        billing_start, "%Y-%m-%d"
-    ).date()
+    try:
+        start_date = datetime.strptime(billing_start, "%Y-%m-%d").date()
+        end_date = datetime.strptime(billing_end, "%Y-%m-%d").date()
+    except ValueError:
+        return round_half_up(taxable_kwh * afa_rate_1)
 
-    end_date = datetime.strptime(
-        billing_end, "%Y-%m-%d"
-    ).date()
-
-    if (
-        start_date.year == end_date.year
-        and start_date.month == end_date.month
-    ):
-        return taxable_kwh * afa_rate_1
+    if end_date <= start_date or (start_date.year == end_date.year and start_date.month == end_date.month):
+        return round_half_up(taxable_kwh * afa_rate_1)
 
     total_days = (end_date - start_date).days
-
-    first_month_end = (
-        start_date.replace(day=28)
-        + timedelta(days=4)
-    )
-    first_month_end = first_month_end.replace(day=1) - timedelta(days=1)
-
-    first_month_days = (
-        first_month_end - start_date
-    ).days + 1
-
+    first_month_end = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    first_month_days = (first_month_end - start_date).days + 1
     second_month_days = total_days - first_month_days
 
-    first_month_kwh = (
-        kwh * first_month_days / total_days
-    )
+    tax_kwh_1 = taxable_kwh * (first_month_days / total_days)
+    tax_kwh_2 = taxable_kwh * (second_month_days / total_days)
 
-    second_month_kwh = (
-        kwh * second_month_days / total_days
-    )
-
-    # Bahagikan taxable 600+ secara proporsional
-    taxable_first = max(
-        0.0,
-        first_month_kwh - (600 * first_month_days / total_days)
-    )
-
-    taxable_second = max(
-        0.0,
-        second_month_kwh - (600 * second_month_days / total_days)
-    )
-
-    return (
-        taxable_first * afa_rate_1
-        + taxable_second * afa_rate_2
-    )
+    return round_half_up(tax_kwh_1 * afa_rate_1) + round_half_up(tax_kwh_2 * afa_rate_2)
     
 
 #main calculation
 def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate_1, afa_rate_2, billing_start, billing_end):
-    """
-    Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat, caj peruncitan, Service Tax dan KWTBB.
-    Mematuhi pembundaran per-line-item rasmi TNB.
-    """
-    # Split kWh kepada Asas (<= 600 kWh) dan Taxable (> 600 kWh)
     base_kwh = min(kwh, 600.0)
     taxable_kwh = max(0.0, kwh - 600.0)
 
-    # ==========================================
-    # 1. CAJ TENAGA, RANGKAIAN, KAPASITI
-    # (Bundarkan bahagian <=600 dan >600 berasingan)
-    # ==========================================
-    e_base = round(base_kwh * e_rate, 2)
-    e_taxable = round(taxable_kwh * e_rate, 2)
-    energy_charge = round(e_base + e_taxable, 2)
+    # 1. Tenaga, Rangkaian, Kapasiti
+    e_base = round_half_up(base_kwh * e_rate)
+    e_taxable = round_half_up(taxable_kwh * e_rate)
+    energy_charge = e_base + e_taxable
 
-    n_base = round(base_kwh * n_rate, 2)
-    n_taxable = round(taxable_kwh * n_rate, 2)
-    network_charge = round(n_base + n_taxable, 2)
+    n_base = round_half_up(base_kwh * n_rate)
+    n_taxable = round_half_up(taxable_kwh * n_rate)
+    network_charge = n_base + n_taxable
 
-    c_base = round(base_kwh * c_rate, 2)
-    c_taxable = round(taxable_kwh * c_rate, 2)
-    capacity_charge = round(c_base + c_taxable, 2)
+    c_base = round_half_up(base_kwh * c_rate)
+    c_taxable = round_half_up(taxable_kwh * c_rate)
+    capacity_charge = c_base + c_taxable
 
-    gross_bill = round(energy_charge + network_charge + capacity_charge, 2)
+    gross_bill = energy_charge + network_charge + capacity_charge
 
-    # Pembolehubah Utama
+    # Pembolehubah
     retail_fee = 0.0
     afa_charge = 0.0
     rebate = 0.0
     service_tax = 0.0
     kwtbb = 0.0
 
-    # ==========================================
-    # 2. REBAT CEKAP TENAGA
-    # ==========================================
+    # 2. Rebat Cekap Tenaga
     rebate_rate = get_efficient_rebate_rate(kwh)
-    rebate_base = round(base_kwh * rebate_rate, 2)
-    rebate_taxable = round(taxable_kwh * rebate_rate, 2)
-    rebate = round(rebate_base + rebate_taxable, 2)
+    rebate_base = round_half_up(base_kwh * rebate_rate)
+    rebate_taxable = round_half_up(taxable_kwh * rebate_rate)
+    rebate = rebate_base + rebate_taxable
 
-    # ==========================================
-    # 3. AFA + SERVICE TAX (Hanya jika > 600 kWh)
-    # ==========================================
+    # 3. AFA & Service Tax (> 600 kWh)
     if kwh > 600:
-        retail_fee = RETAIL_CHARGE_FEE  # Contoh: 10.0
+        retail_fee = RETAIL_CHARGE_FEE  # 10.0
 
-        # Kira AFA Keseluruhan (Prorata ikut hari)
-        afa_charge = round(calculate_spanning_month_afa(
-            kwh,
-            billing_start,
-            billing_end,
-            afa_rate_1,
-            afa_rate_2
-        ), 2)
+        afa_charge = calculate_spanning_month_afa(
+            kwh, billing_start, billing_end, afa_rate_1, afa_rate_2
+        )
 
-        # Kira Taxable AFA (Hanya untuk kWh > 600)
-        taxable_afa = round(calculate_taxable_afa(
-            kwh,
-            billing_start,
-            billing_end,
-            afa_rate_1,
-            afa_rate_2
-        ), 2)
+        taxable_afa = calculate_taxable_afa(
+            kwh, billing_start, billing_end, afa_rate_1, afa_rate_2
+        )
 
-        # Subtotal kena cukai (Tolak rebat taxable)
         taxable_subtotal = (
             e_taxable
             + n_taxable
@@ -290,20 +227,15 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate_1, afa_rate_2, bill
             - rebate_taxable
         )
 
-        service_tax = round(max(0.0, taxable_subtotal * SERVICE_TAX_RATE), 2)
+        service_tax = round_half_up(max(0.0, taxable_subtotal * SERVICE_TAX_RATE))
 
-    # ==========================================
     # 4. KWTBB (1.6%)
-    # ==========================================
     kwtbb_base = gross_bill - rebate
-
     if kwh > 300:
-        kwtbb = round(kwtbb_base * KWTBB_RATE, 2)
+        kwtbb = round_half_up(kwtbb_base * KWTBB_RATE)
 
-    # ==========================================
-    # 5. NET BILL
-    # ==========================================
-    net_bill = round(
+    # 5. Net Bill
+    net_bill = round_half_up(
         max(
             0.0,
             gross_bill
@@ -312,8 +244,7 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate_1, afa_rate_2, bill
             + afa_charge
             + service_tax
             + kwtbb
-        ),
-        2
+        )
     )
 
     return (
