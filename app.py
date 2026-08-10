@@ -2,6 +2,7 @@ import json
 import urllib.request
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from datetime import datetime,timedelta
 
 app = Flask(__name__)
 # Membenarkan Frontend berhubung dengan Backend Flask
@@ -100,9 +101,147 @@ def get_location_name_from_coords(lat, lon):
     return f"Lokasi GPS ({lat:.2f}°, {lon:.2f}°)"
 
 
-def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
-    """Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat,
-    caj peruncitan, Service Tax dan KWTBB."""
+
+#calculate spawning month
+def calculate_spanning_month_afa(
+    kwh,
+    billing_start,
+    billing_end,
+    afa_rate_1,
+    afa_rate_2
+):
+    """
+    Mengira AFA untuk billing period yang mungkin merentasi dua bulan.
+
+    Penggunaan bulanan dianggarkan secara prorata berdasarkan bilangan hari.
+    """
+
+    # Jika tarikh tidak diberikan, gunakan kadar pertama
+    if not billing_start or not billing_end:
+        return kwh * afa_rate_1
+
+    start_date = datetime.strptime(billing_start, "%Y-%m-%d").date()
+    end_date = datetime.strptime(billing_end, "%Y-%m-%d").date()
+
+    if end_date <= start_date:
+        raise ValueError("Tarikh akhir bil mesti selepas tarikh mula bil.")
+
+    # Billing period dalam bulan yang sama
+    if (
+        start_date.year == end_date.year
+        and start_date.month == end_date.month
+    ):
+        return kwh * afa_rate_1
+
+    # Buat masa ini kita sokong spanning maksimum 2 bulan
+    if (
+        end_date.year != start_date.year
+        and end_date.month != start_date.month
+    ):
+        raise ValueError(
+            "Billing period lebih daripada dua bulan belum disokong."
+        )
+
+    total_days = (end_date - start_date).days
+
+    # Hari dalam bulan pertama
+    first_month_end = (
+        start_date.replace(day=28)
+        + timedelta(days=4)
+    )
+    first_month_end = first_month_end.replace(day=1) - timedelta(days=1)
+
+    first_month_days = (
+        first_month_end - start_date
+    ).days + 1
+
+    second_month_days = total_days - first_month_days
+
+    first_month_kwh = (
+        kwh * first_month_days / total_days
+    )
+
+    second_month_kwh = (
+        kwh * second_month_days / total_days
+    )
+
+    afa_first = first_month_kwh * afa_rate_1
+    afa_second = second_month_kwh * afa_rate_2
+
+    return afa_first + afa_second
+
+def calculate_taxable_afa(kwh,billing_start,billing_end,afa_rate_1,afa_rate_2):
+    """
+    Mengira bahagian AFA yang berkaitan dengan penggunaan
+    melebihi 600 kWh untuk tujuan Service Tax.
+    """
+
+    if kwh <= 600:
+        return 0.0
+
+    taxable_kwh = kwh - 600
+
+    # Jika tiada spanning month,
+    # semua taxable kWh menggunakan rate pertama.
+    if not billing_start or not billing_end:
+        return taxable_kwh * afa_rate_1
+
+    start_date = datetime.strptime(
+        billing_start, "%Y-%m-%d"
+    ).date()
+
+    end_date = datetime.strptime(
+        billing_end, "%Y-%m-%d"
+    ).date()
+
+    if (
+        start_date.year == end_date.year
+        and start_date.month == end_date.month
+    ):
+        return taxable_kwh * afa_rate_1
+
+    total_days = (end_date - start_date).days
+
+    first_month_end = (
+        start_date.replace(day=28)
+        + timedelta(days=4)
+    )
+    first_month_end = first_month_end.replace(day=1) - timedelta(days=1)
+
+    first_month_days = (
+        first_month_end - start_date
+    ).days + 1
+
+    second_month_days = total_days - first_month_days
+
+    first_month_kwh = (
+        kwh * first_month_days / total_days
+    )
+
+    second_month_kwh = (
+        kwh * second_month_days / total_days
+    )
+
+    # Bahagikan taxable 600+ secara proporsional
+    taxable_first = max(
+        0.0,
+        first_month_kwh - (600 * first_month_days / total_days)
+    )
+
+    taxable_second = max(
+        0.0,
+        second_month_kwh - (600 * second_month_days / total_days)
+    )
+
+    return (
+        taxable_first * afa_rate_1
+        + taxable_second * afa_rate_2
+    )
+    
+
+#main calculation
+def calculate_tnb_bill(kwh,e_rate,n_rate,c_rate,afa_rate_1,afa_rate_2,billing_start,billing_end):
+    """Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat, caj peruncitan, Service Tax dan KWTBB."""
 
     energy_charge = kwh * e_rate
     network_charge = kwh * n_rate
@@ -131,17 +270,26 @@ def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate):
 
         retail_fee = RETAIL_CHARGE_FEE
 
-        # AFA dikenakan atas keseluruhan penggunaan
-        afa_charge = kwh * afa_rate
+        afa_charge = calculate_spanning_month_afa(
+            kwh,
+            billing_start,
+            billing_end,
+            afa_rate_1,
+            afa_rate_2
+        )
 
-        # Hanya penggunaan melebihi 600 kWh
-        # digunakan untuk pengiraan Service Tax
         taxable_kwh = kwh - 600
 
         taxable_energy = taxable_kwh * e_rate
         taxable_network = taxable_kwh * n_rate
         taxable_capacity = taxable_kwh * c_rate
-        taxable_afa = taxable_kwh * afa_rate
+        taxable_afa = calculate_taxable_afa(
+            kwh,
+            billing_start,
+            billing_end,
+            afa_rate_1,
+            afa_rate_2
+        )
 
         taxable_subtotal = (
             taxable_energy
@@ -229,11 +377,29 @@ def calculate():
 
         # Kadar Tarif Custom
         custom_rates = data.get('customRates', {})
-        e_rate = float(custom_rates.get('eRate', DEFAULT_ENERGY_RATE))
-        n_rate = float(custom_rates.get('nRate', DEFAULT_NETWORK_RATE))
-        c_rate = float(custom_rates.get('cRate', DEFAULT_CAPACITY_RATE))
-        afa_rate = float(custom_rates.get('afaRate', DEFAULT_AFA_RATE))
-        rebate_rate = float(custom_rates.get('rebateRate', DEFAULT_EFFICIENT_REBATE))
+
+        e_rate = float(
+            custom_rates.get('eRate', DEFAULT_ENERGY_RATE)
+        )
+
+        n_rate = float(
+            custom_rates.get('nRate', DEFAULT_NETWORK_RATE)
+        )
+
+        c_rate = float(
+            custom_rates.get('cRate', DEFAULT_CAPACITY_RATE)
+        )
+
+        afa_rate_1 = float(
+            custom_rates.get('afaRate1', 0.0359)
+        )
+
+        afa_rate_2 = float(
+            custom_rates.get('afaRate2', 0.0380)
+        )
+
+        billing_start = data.get('billingStart')
+        billing_end = data.get('billingEnd')
 
         # Logik Penentuan Lokasi (Tepat melalui GPS)
         if custom_lat is not None and custom_lon is not None:
@@ -270,12 +436,49 @@ def calculate():
 
         # Pengiraan Bil Asal & Bil Baharu
         (
-            orig_net, orig_gross, orig_rebate, orig_retail, orig_afa, orig_st, orig_kwtbb, orig_e, orig_n, orig_c
-        ) = calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate)
+            orig_net,
+            orig_gross,
+            orig_rebate,
+            orig_retail,
+            orig_afa,
+            orig_st,
+            orig_kwtbb,
+            orig_e,
+            orig_n,
+            orig_c,
+        ) = calculate_tnb_bill(
+            kwh,
+            e_rate,
+            n_rate,
+            c_rate,
+            afa_rate_1,
+            afa_rate_2,
+            billing_start,
+            billing_end
+        )
 
+ 
         (
-            new_net, new_gross, new_rebate, new_retail, new_afa, new_st, new_kwtbb, new_e, new_n, new_c
-        ) = calculate_tnb_bill(new_grid_kwh, e_rate, n_rate, c_rate, afa_rate, rebate_rate)
+            new_net,
+            new_gross,
+            new_rebate,
+            new_retail,
+            new_afa,
+            new_st,
+            new_kwtbb,
+            new_e,
+            new_n,
+            new_c,
+        ) = calculate_tnb_bill(
+            new_grid_kwh,
+            e_rate,
+            n_rate,
+            c_rate,
+            afa_rate_1,
+            afa_rate_2,
+            billing_start,
+            billing_end
+        )
 
         savings_rm = orig_net - new_net
         savings_pct = (savings_rm / orig_net * 100) if orig_net > 0 else 0
@@ -317,7 +520,7 @@ def calculate():
             'estimatedCost': round(estimated_cost, 0),
             'paybackYears': round(payback_years, 1),
             'totalRateUsed': round(e_rate + n_rate + c_rate, 4),
-            'rebateRateUsed': rebate_rate,
+            'rebateRateUsed': get_efficient_rebate_rate(kwh),
         })
 
     except Exception as e:
