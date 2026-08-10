@@ -257,6 +257,12 @@ def calculate_tnb_bill(kwh,e_rate,n_rate,c_rate,afa_rate_1,afa_rate_2,billing_st
         taxable_energy = taxable_kwh * e_rate
         taxable_network = taxable_kwh * n_rate
         taxable_capacity = taxable_kwh * c_rate
+        
+        # KIRA TAXABLE REBATE (Rebat untuk bahagian > 600 kWh)
+        rebate_rate = get_efficient_rebate_rate(kwh)
+        taxable_rebate = taxable_kwh * rebate_rate
+        
+        
         taxable_afa = calculate_taxable_afa(
             kwh,
             billing_start,
@@ -271,6 +277,7 @@ def calculate_tnb_bill(kwh,e_rate,n_rate,c_rate,afa_rate_1,afa_rate_2,billing_st
             + taxable_capacity
             + taxable_afa
             + retail_fee
+            - taxable_rebate  # <--- BAHAU: Tolak rebat dari Service Tax
         )
 
         service_tax = taxable_subtotal * SERVICE_TAX_RATE
