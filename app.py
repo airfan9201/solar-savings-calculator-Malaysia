@@ -214,95 +214,106 @@ def calculate_taxable_afa(kwh,billing_start,billing_end,afa_rate_1,afa_rate_2):
     
 
 #main calculation
-def calculate_tnb_bill(kwh,e_rate,n_rate,c_rate,afa_rate_1,afa_rate_2,billing_start,billing_end):
-    """Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat, caj peruncitan, Service Tax dan KWTBB."""
+def calculate_tnb_bill(kwh, e_rate, n_rate, c_rate, afa_rate_1, afa_rate_2, billing_start, billing_end):
+    """
+    Mengira bil elektrik berdasarkan kadar dasar, AFA, rebat, caj peruncitan, Service Tax dan KWTBB.
+    Mematuhi pembundaran per-line-item rasmi TNB.
+    """
+    # Split kWh kepada Asas (<= 600 kWh) dan Taxable (> 600 kWh)
+    base_kwh = min(kwh, 600.0)
+    taxable_kwh = max(0.0, kwh - 600.0)
 
-    energy_charge = kwh * e_rate
-    network_charge = kwh * n_rate
-    capacity_charge = kwh * c_rate
+    # ==========================================
+    # 1. CAJ TENAGA, RANGKAIAN, KAPASITI
+    # (Bundarkan bahagian <=600 dan >600 berasingan)
+    # ==========================================
+    e_base = round(base_kwh * e_rate, 2)
+    e_taxable = round(taxable_kwh * e_rate, 2)
+    energy_charge = round(e_base + e_taxable, 2)
 
-    gross_bill = energy_charge + network_charge + capacity_charge
+    n_base = round(base_kwh * n_rate, 2)
+    n_taxable = round(taxable_kwh * n_rate, 2)
+    network_charge = round(n_base + n_taxable, 2)
 
+    c_base = round(base_kwh * c_rate, 2)
+    c_taxable = round(taxable_kwh * c_rate, 2)
+    capacity_charge = round(c_base + c_taxable, 2)
+
+    gross_bill = round(energy_charge + network_charge + capacity_charge, 2)
+
+    # Pembolehubah Utama
     retail_fee = 0.0
     afa_charge = 0.0
     rebate = 0.0
     service_tax = 0.0
     kwtbb = 0.0
 
-    # ==========================
-    # REBAT CEKAP TENAGA
-    # ==========================
-
+    # ==========================================
+    # 2. REBAT CEKAP TENAGA
+    # ==========================================
     rebate_rate = get_efficient_rebate_rate(kwh)
-    rebate = kwh * rebate_rate
+    rebate_base = round(base_kwh * rebate_rate, 2)
+    rebate_taxable = round(taxable_kwh * rebate_rate, 2)
+    rebate = round(rebate_base + rebate_taxable, 2)
 
-    # ==========================
-    # AFA + SERVICE TAX
-    # ==========================
-
+    # ==========================================
+    # 3. AFA + SERVICE TAX (Hanya jika > 600 kWh)
+    # ==========================================
     if kwh > 600:
+        retail_fee = RETAIL_CHARGE_FEE  # Contoh: 10.0
 
-        retail_fee = RETAIL_CHARGE_FEE
-
-        afa_charge = calculate_spanning_month_afa(
+        # Kira AFA Keseluruhan (Prorata ikut hari)
+        afa_charge = round(calculate_spanning_month_afa(
             kwh,
             billing_start,
             billing_end,
             afa_rate_1,
             afa_rate_2
-        )
+        ), 2)
 
-        taxable_kwh = kwh - 600
-
-        taxable_energy = taxable_kwh * e_rate
-        taxable_network = taxable_kwh * n_rate
-        taxable_capacity = taxable_kwh * c_rate
-        
-        # KIRA TAXABLE REBATE (Rebat untuk bahagian > 600 kWh)
-        rebate_rate = get_efficient_rebate_rate(kwh)
-        taxable_rebate = taxable_kwh * rebate_rate
-        
-        
-        taxable_afa = calculate_taxable_afa(
+        # Kira Taxable AFA (Hanya untuk kWh > 600)
+        taxable_afa = round(calculate_taxable_afa(
             kwh,
             billing_start,
             billing_end,
             afa_rate_1,
             afa_rate_2
-        )
+        ), 2)
 
+        # Subtotal kena cukai (Tolak rebat taxable)
         taxable_subtotal = (
-            taxable_energy
-            + taxable_network
-            + taxable_capacity
+            e_taxable
+            + n_taxable
+            + c_taxable
             + taxable_afa
             + retail_fee
-            - taxable_rebate  # <--- BAHAU: Tolak rebat dari Service Tax
+            - rebate_taxable
         )
 
-        service_tax = taxable_subtotal * SERVICE_TAX_RATE
+        service_tax = round(max(0.0, taxable_subtotal * SERVICE_TAX_RATE), 2)
 
-    # ==========================
-    # KWTBB
-    # ==========================
-
+    # ==========================================
+    # 4. KWTBB (1.6%)
+    # ==========================================
     kwtbb_base = gross_bill - rebate
 
     if kwh > 300:
-        kwtbb = kwtbb_base * KWTBB_RATE
+        kwtbb = round(kwtbb_base * KWTBB_RATE, 2)
 
-    # ==========================
-    # NET BILL
-    # ==========================
-
-    net_bill = max(
-        0.0,
-        gross_bill
-        - rebate
-        + retail_fee
-        + afa_charge
-        + service_tax
-        + kwtbb
+    # ==========================================
+    # 5. NET BILL
+    # ==========================================
+    net_bill = round(
+        max(
+            0.0,
+            gross_bill
+            - rebate
+            + retail_fee
+            + afa_charge
+            + service_tax
+            + kwtbb
+        ),
+        2
     )
 
     return (
