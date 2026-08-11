@@ -6,9 +6,12 @@
     <title>Simulator Penjimatan Solar</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google AdSense Script -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9693842863790618"
+       crossorigin="anonymous"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .hideDisplay { display:none; }
+        .hideDisplay{ display:none; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4 md:p-8">
@@ -22,8 +25,7 @@
                     ☀️ <span id="txt-title">Simulator Penjimatan Solar</span>
                 </h1>
                 <p class="text-sky-400 text-xs md:text-sm mt-1" id="txt-subtitle">Khas untuk Pengguna Domestik AM Sahaja</p>
-				<p class="text-sky-400 text-xs md:text-sm mt-1" id="txt-subtitle1">Kiraan AFA mengambil kira kadar tempoh bil secara prorata mengikut hari.</p>
-				<p class="text-sky-400 text-xs md:text-sm mt-1" id="txt-subtitle2">Ini hanyalah anggaran sahaja</p>
+				<p class="text-sky-400 text-xs md:text-sm mt-1" id="txt-subtitle1">Ini hanyalah anggaran sahaja.Kiraan tidak semestinya 100% tepat.</p>
             </div>
             
             <!-- Language Switcher -->
@@ -53,21 +55,31 @@
                     <input type="number" id="kwh-input" value="650" oninput="updateEnergyRate()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" placeholder="e.g. 650">
                 </div>
 				
-				<!-- Input : Tarikh Mula & Akhir Bil -->
+				<!-- Input : tarikh mula bil -->
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+
 					<div>
-						<label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" id="lbl-billing-start">
+						<label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
 							Tarikh Mula Bil
 						</label>
-						<input type="date" id="billing-start" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm">
+						<input
+							type="date"
+							id="billing-start"
+							class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm"
+						>
 					</div>
 
 					<div>
-						<label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1" id="lbl-billing-end">
+						<label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
 							Tarikh Akhir Bil
 						</label>
-						<input type="date" id="billing-end" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm">
+						<input
+							type="date"
+							id="billing-end"
+							class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm"
+						>
 					</div>
+
 				</div>
 
                 <!-- Custom Rates Settings -->
@@ -91,15 +103,32 @@
 							<label class="block text-slate-600 mb-1" id="lbl-afa-rate-1">
 								Kadar AFA Bulan Pertama (RM/kWh):
 							</label>
-							<input type="number" id="afa-rate-1" step="0.0001" value="0.0359" class="w-full p-2 border rounded bg-white">
+							<input
+								type="number"
+								id="afa-rate-1"
+								step="0.0001"
+								value="0.0359"
+								class="w-full p-2 border rounded bg-white"
+							>
 						</div>
 
 						<div>
 							<label class="block text-slate-600 mb-1" id="lbl-afa-rate-2">
 								Kadar AFA Bulan Kedua (RM/kWh):
 							</label>
-							<input type="number" id="afa-rate-2" step="0.0001" value="0.0380" class="w-full p-2 border rounded bg-white">
+							<input
+								type="number"
+								id="afa-rate-2"
+								step="0.0001"
+								value="0.0380"
+								class="w-full p-2 border rounded bg-white"
+							>
 						</div>
+
+                        <div class="md:col-span-2 hideDisplay">
+                            <label class="block text-slate-600 mb-1 font-semibold text-emerald-700" id="lbl-rebate-rate">Rebat Cekap Tenaga (RM/kWh):</label>
+                            <input type="number" id="rebate-rate" step="0.0001" value="0.2100" class="w-full p-2 border rounded font-semibold text-emerald-700 bg-white">
+                        </div>
                     </div>
                 </details>
 
@@ -174,7 +203,7 @@
                 </div>
 
                 <!-- ========================================== -->
-                <!-- SECTION EXPAND/COLLAPSE: FORMULA BREAKDOWN -->
+                <!-- SECTION BAHARU: FORMULA BREAKDOWN CARDS   -->
                 <!-- ========================================== -->
                 <div class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                     <button onclick="toggleBreakdown()" class="w-full p-4 text-left font-bold text-xs md:text-sm text-slate-800 flex justify-between items-center bg-slate-100 hover:bg-slate-200 transition">
@@ -239,101 +268,173 @@
                     </div>
                 </div>
 
+                <!-- CTA Button -->
+                <button class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition text-sm flex items-center justify-center gap-2" style="display:none">
+                    📩 <span id="btn-lead">Dapatkan Sebut Harga Rasmi Solar</span>
+                </button>
+
             </div>
 
         </div>
     </div>
 
     <script>
-        const API_BASE_URL = 'http://127.0.0.1:5000'; // Tukar jika ke Render / Production
+        const API_BASE_URL = 'https://solar-savings-calculator.onrender.com';
         let currentLang = 'ms';
         let userLatitude = null;
         let userLongitude = null;
-        let lastCalculationData = null; // Menyimpan cache data pengiraan terakhir
+        let lastCalculationData = null;
 
         const i18n = {
-            ms: {
-                title: "Simulator Penjimatan Solar",
-                subtitle: "Khas untuk Pengguna Domestik AM Sahaja",
-                subtitle1: "Kiraan AFA mengambil kira kadar tempoh bil secara prorata mengikut hari.",
-                subtitle2: "Ini hanyalah anggaran sahaja",
-                lblCity: "Pilih Lokasi / Bandar (Data Cuaca API):",
-                lblKwh: "Penggunaan Elektrik Sebulan (kWh)",
-                lblBillingStart: "Tarikh Mula Bil",
-                lblBillingEnd: "Tarikh Akhir Bil",
-                lblAdvanced: "Tetapan Kadar Tarif & Rebat (Pilihan)",
-                lblERate: "Cas Tenaga (RM/kWh):",
-                lblNRate: "Cas Rangkaian (RM/kWh):",
-                lblCRate: "Cas Kapasiti (RM/kWh):",
-                lblAfaRate1: "Kadar AFA Bulan Pertama (RM/kWh):",
-                lblAfaRate2: "Kadar AFA Bulan Kedua (RM/kWh):",
-                lblRebateRate: "Rebat Cekap Tenaga (RM/kWh):",
-                btnCalc: "Kira & Simulasikan Penjimatan",
-                resLoc: "Lokasi:",
-                resPsh: "Purata Cuaca (PSH):",
-                resJh:"jam/hari",
-                sysTitle: "⚡ Cadangan Sistem Solar & Imbalan kWh",
-                lblSize: "Saiz Ideal:",
-                lblOrigKwh: "Penggunaan Asal:",
-                lblGen: "Penjanaan Solar:",
-                lblGrid: "Baki Grid kWh:",
-                lblOrigBill: "Bil Asal (Tanpa Solar)",
-                lblNewBill: "Bil Baharu (Grid)",
-                lblSavings: "Anggaran Penjimatan Bersih",
-                lblPct: "Penjimatan:",
-                month: "bulan",
-                lblCost: "Anggaran Kos Sistem",
-                lblPayback: "Tempoh Pulang Modal",
-                warnCap: "⚠️ Dihadkan kepada 4.0 kWp (Had Single-Phase TNB).",
-                breakdownTitle: "Perincian Pengiraan Formula Bil Asal",
-                breakdownSubtitle: "Berikut adalah pecahan bagaimana setiap caj dikira secara terperinci mengikut struktur TNB:",
-                cardBaseTitle: "1. Cas Tenaga, Rangkaian & Kapasiti",
-                cardRebateTitle: "2. Insentif Rebat Cekap Tenaga",
-                cardAfaTitle: "3. Unjuran Caj AFA",
-                cardTaxTitle: "4. Cukai Perkhidmatan & KWTBB"
-            },
-            en: {
-                title: "Solar Savings Simulator",
-                subtitle: "Exclusively for General Domestic Users Only",
-                subtitle1: "AFA calculation considers billing period rates prorated by days.",
-                subtitle2: "This is an estimation only",
-                lblCity: "Select Location / City (API Weather Data):",
-                lblKwh: "Monthly Electricity Usage (kWh)",
-                lblBillingStart: "Billing Start Date",
-                lblBillingEnd: "Billing End Date",
-                lblAdvanced: "Tariff & Rebate Settings (Optional)",
-                lblERate: "Energy Charge (RM/kWh):",
-                lblNRate: "Network Charge (RM/kWh):",
-                lblCRate: "Capacity Charge (RM/kWh):",
-                lblAfaRate1: "1st Month AFA Rate (RM/kWh):",
-                lblAfaRate2: "2nd Month AFA Rate (RM/kWh):",
-                lblRebateRate: "Efficient Energy Rebate (RM/kWh):",
-                btnCalc: "Calculate & Simulate Savings",
-                resLoc: "Location:",
-                resPsh: "Average Sun Hours (PSH):",
-                resJh:"hour/day",
-                sysTitle: "⚡ Recommended Solar System & kWh Offset",
-                lblSize: "Ideal Size:",
-                lblOrigKwh: "Original Usage:",
-                lblGen: "Solar Generation:",
-                lblGrid: "Remaining Grid kWh:",
-                lblOrigBill: "Original Bill (Without Solar)",
-                lblNewBill: "New Bill (From Grid)",
-                lblSavings: "Estimated Net Savings",
-                lblPct: "Savings:",
-                month: "month",
-                lblCost: "Estimated System Cost",
-                lblPayback: "Payback Period",
-                warnCap: "⚠️ Capped at 4.0 kWp (Single-Phase Limit).",
-                breakdownTitle: "Original Bill Formula Breakdown",
-                breakdownSubtitle: "Here is a detailed breakdown of how each charge is calculated based on the TNB structure:",
-                cardBaseTitle: "1. Energy, Network & Capacity Charges",
-                cardRebateTitle: "2. Energy Efficiency Rebate",
-                cardAfaTitle: "3. Projected AFA Charge",
-                cardTaxTitle: "4. Service Tax & KWTBB"
-            }
-        };
+			ms: {
+			title: "Simulator Penjimatan Solar",
+			subtitle: "Khas untuk Pengguna Domestik AM Sahaja",
+			subtitle1: "Ini hanyalah anggaran sahaja.Kiraan tidak semestinya 100% tepat.",
+			lblCity: "Pilih Lokasi / Bandar (Data Cuaca API):",
+			lblKwh: "Penggunaan Elektrik Sebulan (kWh)",
+			lblAdvanced: "Tetapan Kadar Tarif & Rebat (Pilihan)",
+			lblERate: "Cas Tenaga (RM/kWh):",
+			lblNRate: "Cas Rangkaian (RM/kWh):",
+			lblCRate: "Cas Kapasiti (RM/kWh):",
+			lblAfaRate1: "Kadar AFA Bulan Pertama (RM/kWh):",
+			lblAfaRate2: "Kadar AFA Bulan Kedua (RM/kWh):",
+			lblRebateRate: "Rebat Cekap Tenaga (RM/kWh):",
+			btnCalc: "Kira & Simulasikan Penjimatan",
+			resLoc: "Lokasi:",
+			resPsh: "Purata Cuaca (PSH):",
+			resJh:"jam/hari",
+			sysTitle: "⚡ Cadangan Sistem Solar & Imbalan kWh",
+			lblSize: "Saiz Ideal:",
+			lblOrigKwh: "Penggunaan Asal:",
+			lblGen: "Penjanaan Solar:",
+			lblGrid: "Baki Grid kWh:",
+			lblOrigBill: "Bil Asal (Tanpa Solar)",
+			lblNewBill: "Bil Baharu (Grid)",
+			lblSavings: "Anggaran Penjimatan Bersih",
+			lblPct: "Penjimatan:",
+			month: "bulan",
+			lblCost: "Anggaran Kos Sistem",
+			lblPayback: "Tempoh Pulang Modal",
+			btnLead: "Dapatkan Sebut Harga Rasmi Solar",
+			warnCap: "⚠️ Dihadkan kepada 4.0 kWp (Had Single-Phase TNB).",
+            breakdownTitle: "Perincian Pengiraan Formula Bil Asal",
+            breakdownSubtitle: "Berikut adalah pecahan bagaimana setiap caj dikira secara terperinci mengikut struktur TNB:",
+            cardBaseTitle: "1. Cas Tenaga, Rangkaian & Kapasiti",
+            cardRebateTitle: "2. Insentif Rebat Cekap Tenaga",
+            cardAfaTitle: "3. Unjuran Caj AFA",
+            cardTaxTitle: "4. Cukai Perkhidmatan & KWTBB"
+			},
+			en: {
+			title: "Solar Savings Simulator",
+			subtitle: "Exclusively for General Domestic Users Only",
+			subtitle1: "The calculation may differ and not 100% accurate.",
+			lblCity: "Select Location / City (API Weather Data):",
+			lblKwh: "Monthly Electricity Usage (kWh)",
+			lblAdvanced: "Tariff & Rebate Settings (Optional)",
+			lblERate: "Energy Charge (RM/kWh):",
+			lblNRate: "Network Charge (RM/kWh):",
+			lblCRate: "Capacity Charge (RM/kWh):",
+			lblAfaRate1: "1st Month AFA Rate (RM/kWh):",
+			lblAfaRate2: "2nd Month AFA Rate (RM/kWh):",
+			lblRebateRate: "Efficient Energy Rebate (RM/kWh):",
+			btnCalc: "Calculate & Simulate Savings",
+			resLoc: "Location:",
+			resPsh: "Average Sun Hours (PSH):",
+			resJh:"hour/day",
+			sysTitle: "⚡ Recommended Solar System & kWh Offset",
+			lblSize: "Ideal Size:",
+			lblOrigKwh: "Original Usage:",
+			lblGen: "Solar Generation:",
+			lblGrid: "Remaining Grid kWh:",
+			lblOrigBill: "Original Bill (Without Solar)",
+			lblNewBill: "New Bill (From Grid)",
+			lblSavings: "Estimated Net Savings",
+			lblPct: "Savings:",
+			month: "month",
+			lblCost: "Estimated System Cost",
+			lblPayback: "Payback Period",
+			btnLead: "Get Official Solar Quotation",
+			warnCap: "⚠️ Capped at 4.0 kWp (Single-Phase Limit).",
+            breakdownTitle: "Original Bill Formula Breakdown",
+            breakdownSubtitle: "Here is a detailed breakdown of how each charge is calculated based on the TNB structure:",
+            cardBaseTitle: "1. Energy, Network & Capacity Charges",
+            cardRebateTitle: "2. Energy Efficiency Rebate",
+            cardAfaTitle: "3. Projected AFA Charge",
+            cardTaxTitle: "4. Service Tax & KWTBB"
+			}
+		};
 
+		function switchLang(lang) {
+			currentLang = lang;
+			const t = i18n[lang];
+
+			document.getElementById('txt-title').innerText = t.title;
+			document.getElementById('txt-subtitle').innerText = t.subtitle;
+			document.getElementById('txt-subtitle1').innerText = t.subtitle1;
+			document.getElementById('lbl-city').innerText = t.lblCity;
+			document.getElementById('lbl-kwh').innerText = t.lblKwh;
+			document.getElementById('lbl-advanced').innerText = t.lblAdvanced;
+			document.getElementById('lbl-e-rate').innerText = t.lblERate;
+			document.getElementById('lbl-n-rate').innerText = t.lblNRate;
+			document.getElementById('lbl-c-rate').innerText = t.lblCRate;
+			document.getElementById('lbl-afa-rate-1').innerText = t.lblAfaRate1;
+			document.getElementById('lbl-afa-rate-2').innerText = t.lblAfaRate2;
+			document.getElementById('lbl-rebate-rate').innerText = t.lblRebateRate;
+			document.getElementById('btn-calc').innerText = t.btnCalc;
+			
+			document.getElementById('res-lbl-loc').innerText = t.resLoc;
+			document.getElementById('res-lbl-psh').innerText = t.resPsh;
+			document.getElementById('res-lbl-jh').innerText = t.resJh;
+			
+			document.getElementById('res-sys-title').innerText = t.sysTitle;
+			document.getElementById('res-lbl-size').innerText = t.lblSize;
+			document.getElementById('res-lbl-orig-kwh').innerText = t.lblOrigKwh;
+			document.getElementById('res-lbl-gen').innerText = t.lblGen;
+			document.getElementById('res-lbl-grid').innerText = t.lblGrid;
+			document.getElementById('res-lbl-orig-bill').innerText = t.lblOrigBill;
+			document.getElementById('res-lbl-new-bill').innerText = t.lblNewBill;
+			document.getElementById('res-lbl-savings').innerText = t.lblSavings;
+			document.getElementById('res-lbl-pct').innerText = t.lblPct;
+			document.getElementById('res-month').innerText = t.month;
+			document.getElementById('res-lbl-cost').innerText = t.lblCost;
+			document.getElementById('res-lbl-payback').innerText = t.lblPayback;
+			document.getElementById('btn-lead').innerText = t.btnLead;
+			document.getElementById('capped-warning').innerText = t.warnCap;
+
+            // Accordion Texts
+            document.getElementById('lbl-breakdown-title').innerText = t.breakdownTitle;
+            document.getElementById('lbl-breakdown-subtitle').innerText = t.breakdownSubtitle;
+            document.getElementById('card-base-title').innerText = t.cardBaseTitle;
+            document.getElementById('card-rebate-title').innerText = t.cardRebateTitle;
+            document.getElementById('card-afa-title').innerText = t.cardAfaTitle;
+            document.getElementById('card-tax-title').innerText = t.cardTaxTitle;
+
+			if(lang === 'ms') {
+				document.getElementById('btn-bm').className = "px-3 py-1 text-xs font-bold rounded-md bg-sky-500 text-white transition";
+				document.getElementById('btn-en').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+			} else {
+				document.getElementById('btn-en').className = "px-3 py-1 text-xs font-bold rounded-md bg-sky-500 text-white transition";
+				document.getElementById('btn-bm').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+			}
+
+            if (lastCalculationData) {
+                renderFormulaBreakdown(lastCalculationData);
+            }
+		}
+
+        function toggleBreakdown() {
+            const content = document.getElementById('breakdown-content');
+            const icon = document.getElementById('breakdown-icon');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.innerText = currentLang === 'ms' ? '▲ Tutup' : '▲ Collapse';
+            } else {
+                content.classList.add('hidden');
+                icon.innerText = currentLang === 'ms' ? '▼ Buka Detail' : '▼ Expand';
+            }
+        }
+
+        // Automatik minta GPS apabila laman dimuatkan
         function getGPSLocation() {
             const statusText = document.getElementById('locationStatus');
             if (navigator.geolocation) {
@@ -349,14 +450,17 @@
                     (error) => {
                         if (statusText) {
                             statusText.className = "text-[11px] text-amber-600 mt-1 font-medium";
-                            statusText.innerText = "⚠️ Akses GPS ditolak. Menggunakan senarai bandar manual.";
+                            statusText.innerText = "⚠️ Akses GPS ditolak/tidak aktif. Menggunakan senarai bandar manual.";
                         }
                     },
                     { enableHighAccuracy: true, timeout: 10000 }
                 );
+            } else if (statusText) {
+                statusText.innerText = "Pelayar tidak menyokong GPS. Pilih bandar manual.";
             }
         }
 
+        // Muat turun senarai bandar dari backend
         async function loadCities() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/cities`);
@@ -376,88 +480,7 @@
             }
         }
 
-        function switchLang(lang) {
-            currentLang = lang;
-            const t = i18n[lang];
-
-            document.getElementById('txt-title').innerText = t.title;
-            document.getElementById('txt-subtitle').innerText = t.subtitle;
-            document.getElementById('txt-subtitle1').innerText = t.subtitle1;
-            document.getElementById('txt-subtitle2').innerText = t.subtitle2;
-            document.getElementById('lbl-city').innerText = t.lblCity;
-            document.getElementById('lbl-kwh').innerText = t.lblKwh;
-            document.getElementById('lbl-billing-start').innerText = t.lblBillingStart;
-            document.getElementById('lbl-billing-end').innerText = t.lblBillingEnd;
-            document.getElementById('lbl-advanced').innerText = t.lblAdvanced;
-            document.getElementById('lbl-e-rate').innerText = t.lblERate;
-            document.getElementById('lbl-n-rate').innerText = t.lblNRate;
-            document.getElementById('lbl-c-rate').innerText = t.lblCRate;
-            document.getElementById('lbl-afa-rate-1').innerText = t.lblAfaRate1;
-            document.getElementById('lbl-afa-rate-2').innerText = t.lblAfaRate2;
-            document.getElementById('btn-calc').innerText = t.btnCalc;
-            
-            document.getElementById('res-lbl-loc').innerText = t.resLoc;
-            document.getElementById('res-lbl-psh').innerText = t.resPsh;
-            document.getElementById('res-lbl-jh').innerText = t.resJh;
-            
-            document.getElementById('res-sys-title').innerText = t.sysTitle;
-            document.getElementById('res-lbl-size').innerText = t.lblSize;
-            document.getElementById('res-lbl-orig-kwh').innerText = t.lblOrigKwh;
-            document.getElementById('res-lbl-gen').innerText = t.lblGen;
-            document.getElementById('res-lbl-grid').innerText = t.lblGrid;
-            document.getElementById('res-lbl-orig-bill').innerText = t.lblOrigBill;
-            document.getElementById('res-lbl-new-bill').innerText = t.lblNewBill;
-            document.getElementById('res-lbl-savings').innerText = t.lblSavings;
-            document.getElementById('res-lbl-pct').innerText = t.lblPct;
-            document.getElementById('res-month').innerText = t.month;
-            document.getElementById('res-lbl-cost').innerText = t.lblCost;
-            document.getElementById('res-lbl-payback').innerText = t.lblPayback;
-            document.getElementById('capped-warning').innerText = t.warnCap;
-
-            // Section Accordion Texts
-            document.getElementById('lbl-breakdown-title').innerText = t.breakdownTitle;
-            document.getElementById('lbl-breakdown-subtitle').innerText = t.breakdownSubtitle;
-            document.getElementById('card-base-title').innerText = t.cardBaseTitle;
-            document.getElementById('card-rebate-title').innerText = t.cardRebateTitle;
-            document.getElementById('card-afa-title').innerText = t.cardAfaTitle;
-            document.getElementById('card-tax-title').innerText = t.cardTaxTitle;
-
-            if(lang === 'ms') {
-                document.getElementById('btn-bm').className = "px-3 py-1 text-xs font-bold rounded-md bg-sky-500 text-white transition";
-                document.getElementById('btn-en').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
-            } else {
-                document.getElementById('btn-en').className = "px-3 py-1 text-xs font-bold rounded-md bg-sky-500 text-white transition";
-                document.getElementById('btn-bm').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
-            }
-
-            if (lastCalculationData) {
-                renderFormulaBreakdown(lastCalculationData);
-            }
-        }
-
-        function toggleBreakdown() {
-            const content = document.getElementById('breakdown-content');
-            const icon = document.getElementById('breakdown-icon');
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                icon.innerText = currentLang === 'ms' ? '▲ Tutup' : '▲ Collapse';
-            } else {
-                content.classList.add('hidden');
-                icon.innerText = currentLang === 'ms' ? '▼ Buka Detail' : '▼ Expand';
-            }
-        }
-
-        function updateEnergyRate() {
-            const kwh = parseFloat(document.getElementById("kwh-input").value) || 0;
-            const eRate = document.getElementById("e-rate");
-            if (kwh > 1500) {
-                eRate.value = "0.3703";
-            } else {
-                eRate.value = "0.2703";
-            }
-        }
-
-        async function calculateViaBackend() {
+		async function calculateViaBackend() {
             const kwh = parseFloat(document.getElementById('kwh-input').value);
             if (!kwh || kwh <= 0) {
                 alert(currentLang === 'ms' ? 'Sila masukkan kWh yang sah.' : 'Please enter a valid kWh value.');
@@ -465,39 +488,42 @@
             }
 
             const cityOption = document.getElementById('city-select').value;
+			
+			if (cityOption === "AUTO" && (userLatitude === null || userLongitude === null)) {
+				try {
+					const position = await new Promise((resolve, reject) => {
+						navigator.geolocation.getCurrentPosition(
+							resolve, reject,
+							{ enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+						);
+					});
+					userLatitude = position.coords.latitude;
+					userLongitude = position.coords.longitude;
+				} catch (err) {
+					console.log("GPS tidak tersedia. Menggunakan fallback.");
+				}
+			}
 
-            if (cityOption === "AUTO" && (userLatitude === null || userLongitude === null)) {
-                try {
-                    const position = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
-                    });
-                    userLatitude = position.coords.latitude;
-                    userLongitude = position.coords.longitude;
-                } catch (err) {
-                    console.log("GPS tidak tersedia. Menggunakan fallback.");
-                }
-            }
-
-            const customRates = {
-                eRate: parseFloat(document.getElementById('e-rate').value) || 0.2703,
-                nRate: parseFloat(document.getElementById('n-rate').value) || 0.1285,
-                cRate: parseFloat(document.getElementById('c-rate').value) || 0.0455,
-                afaRate1: parseFloat(document.getElementById('afa-rate-1').value) || 0.0359,
-                afaRate2: parseFloat(document.getElementById('afa-rate-2').value) || 0.0380
-            };
+			const customRates = {
+				eRate: parseFloat(document.getElementById('e-rate').value) || 0.2703,
+				nRate: parseFloat(document.getElementById('n-rate').value) || 0.1285,
+				cRate: parseFloat(document.getElementById('c-rate').value) || 0.0455,
+				afaRate1: parseFloat(document.getElementById('afa-rate-1').value) || 0.0359,
+				afaRate2: parseFloat(document.getElementById('afa-rate-2').value) || 0.0380
+			};
 
             const btn = document.getElementById('btn-calc');
             btn.innerText = currentLang === 'ms' ? 'Mengira & Mengambil Data Cuaca...' : 'Calculating & Fetching Weather...';
 
-            const payload = {
-                kwh: kwh,
-                cityOption: cityOption,
-                customRates: customRates,
-                billingStart: document.getElementById('billing-start').value,
-                billingEnd: document.getElementById('billing-end').value,
-                lat: (cityOption === 'AUTO') ? userLatitude : null,
-                lon: (cityOption === 'AUTO') ? userLongitude : null
-            };
+			const payload = {
+				kwh: kwh,
+				cityOption: cityOption,
+				customRates: customRates,
+				billingStart: document.getElementById('billing-start').value,
+				billingEnd: document.getElementById('billing-end').value,
+				lat: (cityOption === 'AUTO') ? userLatitude : null,
+				lon: (cityOption === 'AUTO') ? userLongitude : null
+			};
 
             try {
                 const response = await fetch(`${API_BASE_URL}/api/calculate`, {
@@ -509,19 +535,19 @@
                 if (!response.ok) throw new Error('Ralat semasa menghubungi server.');
 
                 const data = await response.json();
-                lastCalculationData = data; // Simpan cache data
+                lastCalculationData = data;
 
-                // Paparkan lokasi & cuaca
+                // Paparkan maklumat cuaca & lokasi
                 document.getElementById('res-loc').innerText = `${data.city} (${data.lat}°, ${data.lon}°)`;
                 document.getElementById('res-psh').innerText = data.avgPsh;
 
-                // Solar Spec
+                // Paparkan saiz & penjanaan solar
                 document.getElementById('res-kwp').innerText = `${data.recommendedKwp} kWp`;
                 document.getElementById('res-orig-kwh').innerText = `${data.monthlyKwh} kWh`;
                 document.getElementById('res-gen-kwh').innerText = `${data.monthlyGenKwh} kWh`;
                 document.getElementById('res-grid-kwh').innerText = `${data.newGridKwh} kWh`;
 
-                // Bil Asal Breakdown
+                // Paparkan Bil Asal Breakdown
                 document.getElementById('res-orig-price').innerText = `RM ${data.origNet.toFixed(2)}`;
                 document.getElementById('res-orig-e').innerText = `RM ${data.origE.toFixed(2)}`;
                 document.getElementById('res-orig-n').innerText = `RM ${data.origN.toFixed(2)}`;
@@ -531,17 +557,17 @@
                 toggleRow('row-orig-retail', 'res-orig-retail', data.origRetail, '+RM ');
                 toggleRow('row-orig-afa', 'res-orig-afa', data.origAfa, '+RM ');
                 toggleRow('row-orig-st', 'res-orig-st', data.origSt, '+RM ');
-                toggleRow('row-orig-kwtbb', 'res-orig-kwtbb', data.origKwtbb, '+RM ');
+				toggleRow('row-orig-kwtbb', 'res-orig-kwtbb', data.origKwtbb, '+RM ');
 
-                // Bil Baharu Breakdown
+                // Paparkan Bil Baharu Breakdown
                 document.getElementById('res-new-price').innerText = `RM ${data.newNet.toFixed(2)}`;
                 toggleRow('row-new-rebate', 'res-new-rebate', data.newRebate, '-RM ');
                 toggleRow('row-new-retail', 'res-new-retail', data.newRetail, '+RM ');
                 toggleRow('row-new-afa', 'res-new-afa', data.newAfa, '+RM ');
                 toggleRow('row-new-st', 'res-new-st', data.newSt, '+RM ');
-                toggleRow('row-new-kwtbb', 'res-new-kwtbb', data.newKwtbb, '+RM ');
+				toggleRow('row-new-kwtbb', 'res-new-kwtbb', data.newKwtbb, '+RM ');
 
-                // ROI & Savings
+                // ROI & Penjimatan
                 document.getElementById('res-savings').innerText = `RM ${data.savingsRm.toFixed(2)}`;
                 document.getElementById('res-pct').innerText = `${data.savingsPct.toFixed(1)}%`;
                 document.getElementById('res-cost').innerText = `RM ${data.estimatedCost.toLocaleString()}`;
@@ -553,7 +579,7 @@
                     document.getElementById('capped-warning').classList.add('hidden');
                 }
 
-                // Render Formula Breakdown Cards
+                // Render Formula Cards
                 renderFormulaBreakdown(data);
 
                 document.getElementById('result-box').classList.remove('hidden');
@@ -566,15 +592,11 @@
             }
         }
 
-        // ==========================================
-        // FUNGSI MEMAPARKAN DETAIL FORMULA DALAM KAD
-        // ==========================================
         function renderFormulaBreakdown(data) {
             const kwh = data.monthlyKwh;
             const baseKwh = Math.min(kwh, 600);
             const taxableKwh = Math.max(0, kwh - 600);
 
-            // Kad 1: Base Tariff
             const eRate = parseFloat(document.getElementById('e-rate').value) || 0.2703;
             const nRate = parseFloat(document.getElementById('n-rate').value) || 0.1285;
             const cRate = parseFloat(document.getElementById('c-rate').value) || 0.0455;
@@ -587,7 +609,6 @@
                 <p class="pt-1 text-sky-700 font-bold border-t">Jumlah Kasar = RM ${data.origGross.toFixed(2)}</p>
             `;
 
-            // Kad 2: Rebat Cekap
             const rebateRate = data.rebateRateUsed || 0;
             document.getElementById('card-rebate-content').innerHTML = `
                 <p>• <b>Kadar Tier (${kwh} kWh):</b> RM ${rebateRate.toFixed(3)} / kWh</p>
@@ -595,14 +616,12 @@
                 <p class="pt-1 text-emerald-700 font-bold border-t">Jumlah Rebat = -RM ${data.origRebate.toFixed(2)}</p>
             `;
 
-            // Kad 3: AFA
             document.getElementById('card-afa-content').innerHTML = `
                 <p>• <b>Status Spanning:</b> ${data.origAfa > 0 ? 'Prorata Mengikut Hari' : 'Bulan Sama'}</p>
                 <p>• <b>Jumlah Caj AFA:</b> <b>RM ${data.origAfa.toFixed(2)}</b></p>
                 <p class="text-[10px] text-slate-400 font-sans mt-1">Diprorata mengikut julat tarikh bil & kadar bulanan.</p>
             `;
 
-            // Kad 4: Cukai & KWTBB
             document.getElementById('card-tax-content').innerHTML = `
                 <p>• <b>Caj Peruncitan (>600kWh):</b> RM ${data.origRetail.toFixed(2)}</p>
                 <p>• <b>ST 8% (>600kWh):</b> <b>RM ${data.origSt.toFixed(2)}</b></p>
@@ -621,7 +640,19 @@
                 row.classList.add('hidden');
             }
         }
+		
+		function updateEnergyRate() {
+			const kwh = parseFloat(document.getElementById("kwh-input").value) || 0;
+			const eRate = document.getElementById("e-rate");
 
+			if (kwh > 1500) {
+				eRate.value = "0.3703";
+			} else {
+				eRate.value = "0.2703";
+			}
+		}
+
+        // Jalankan fungsi pengesanan GPS & muat bandar bila halaman dibuka
         window.addEventListener('DOMContentLoaded', () => {
             getGPSLocation();
             loadCities();
