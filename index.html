@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulator Penjimatan Solar</title>
+    <!-- Pi Network SDK (hybrid: only authenticated when running in Pi environment) -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google AdSense Script -->
@@ -652,8 +655,62 @@
 			}
 		}
 
+        // ------------------------------------------------------------
+        // PI NETWORK HYBRID MODE
+        //
+        // The calculator remains fully usable in a normal browser.
+        // Pi authentication is attempted only when the page appears
+        // to be running inside the Pi environment.
+        // ------------------------------------------------------------
+        function isPiEnvironment() {
+            const ua = (navigator.userAgent || '').toLowerCase();
+            const referrer = (document.referrer || '').toLowerCase();
+            const host = (window.location.hostname || '').toLowerCase();
+
+            return (
+                ua.includes('pibrowser') ||
+                ua.includes('pi-browser') ||
+                referrer.includes('minepi.com') ||
+                referrer.includes('pinet.com') ||
+                host.includes('pinet.com') ||
+                host.includes('minepi.com')
+            );
+        }
+
+        async function initPiAuthentication() {
+            // Normal Chrome/Edge/Safari/etc.: DO NOT authenticate.
+            if (!isPiEnvironment()) {
+                console.log('Standalone browser detected - Pi authentication skipped.');
+                return;
+            }
+
+            try {
+                if (!window.Pi || typeof window.Pi.init !== 'function') {
+                    console.warn('Pi environment detected, but Pi SDK is not available.');
+                    return;
+                }
+
+                await window.Pi.init({ version: '2.0' });
+
+                const scopes = ['username'];
+
+                const auth = await window.Pi.authenticate(
+                    scopes,
+                    function onIncompletePaymentFound(payment) {
+                        console.log('Incomplete Pi payment found:', payment);
+                    }
+                );
+
+                console.log('Pi authentication successful:', auth?.user?.username || 'authenticated');
+            } catch (error) {
+                // Authentication failure must NOT break the calculator.
+                console.warn('Pi authentication unavailable/failed. Continuing in standalone mode.', error);
+            }
+        }
+
         // Jalankan fungsi pengesanan GPS & muat bandar bila halaman dibuka
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initPiAuthentication();
             getGPSLocation();
             loadCities();
         });
